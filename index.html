@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Introduction to Express Middleware</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css">
+  <style>
+:root {
+  --amber:  #f5a623;
+  --green:  #4ecb8d;
+  --purple: #a78bfa;
+  --blue:   #60a5fa;
+  --red:    #f87171;
+  --bg:     #0a0a0f;
+  --bg2:    #10101a;
+  --bg3:    #181824;
+  --border: #2a2a3a;
+  --text:   #e8e8f0;
+  --muted:  #8888a8;
+}
+
+.reveal-viewport { background: var(--bg); }
+.reveal .slides section { background: transparent; }
+
+.reveal { font-family: 'DM Sans', sans-serif; color: var(--text); }
+.reveal h1, .reveal h2, .reveal h3 { font-family: 'Playfair Display', serif; font-weight: 700; }
+.reveal h1 { font-size: 1.6em; color: var(--amber); line-height: 1.1; }
+.reveal h2 { font-size: 1.1em; color: var(--amber); margin-bottom: .2em; }
+.reveal h3 { font-size: .78em; color: var(--green); margin-bottom: .15em; }
+.reveal p  { font-size: .56em; line-height: 1.45; color: var(--text); }
+.reveal li { font-size: .54em; line-height: 1.45; margin-bottom: .1em; }
+.reveal code { font-family: 'JetBrains Mono', monospace; font-size: .72em; }
+.reveal pre  { box-shadow: none; background: var(--bg3); border: 1px solid var(--border);
+               border-radius: 6px; padding: .3em .5em; margin: .25em 0; }
+.reveal pre code { font-size: .52em; line-height: 1.35; background: transparent; color: #cdd6f4; }
+
+.slide-hdr {
+  display: flex; align-items: center; gap: .4em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: .2em; margin-bottom: .3em;
+}
+.slide-hdr .tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .42em; font-weight: 500;
+  color: var(--bg); background: var(--amber);
+  padding: .1em .4em; border-radius: 3px;
+  letter-spacing: .04em;
+}
+.slide-hdr h2 { margin: 0; font-size: .95em; }
+
+.cols   { display: grid; gap: .5em; }
+.cols-2 { grid-template-columns: 1fr 1fr; }
+.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cols-6040 { grid-template-columns: 6fr 4fr; }
+.cols-4060 { grid-template-columns: 4fr 6fr; }
+
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; padding: .35em .6em;
+}
+.card.amber { border-left: 3px solid var(--amber); }
+.card.green { border-left: 3px solid var(--green); }
+.card.purple{ border-left: 3px solid var(--purple); }
+.card.blue  { border-left: 3px solid var(--blue); }
+.card.red   { border-left: 3px solid var(--red); }
+.card h3 { font-size: .64em; margin: 0 0 .12em; }
+.card p  { font-size: .52em; margin: 0; color: #b8b8d0; }
+.card ul { margin: 0; padding-left: 1em; }
+.card li { font-size: .52em; color: #b8b8d0; margin-bottom: .02em; }
+
+.reveal table { width: 100%; border-collapse: collapse; font-size: .5em; }
+.reveal table th { background: var(--bg3); color: var(--amber); font-weight: 600;
+                   padding: .2em .4em; border: 1px solid var(--border); text-align: left; }
+.reveal table td { padding: .18em .4em; border: 1px solid var(--border); color: #ccc; }
+.reveal table tr:nth-child(even) td { background: #0e0e18; }
+
+.a  { color: var(--amber); font-weight: 600; }
+.g  { color: var(--green); font-weight: 600; }
+.p  { color: var(--purple); font-weight: 600; }
+.b  { color: var(--blue); font-weight: 600; }
+.r  { color: var(--red); font-weight: 600; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+
+svg.diagram { display: block; margin: 0 auto; overflow: visible; }
+
+.pill {
+  display: inline-block; font-family: 'JetBrains Mono', monospace;
+  font-size: .44em; padding: .08em .4em; border-radius: 99px;
+  border: 1px solid; margin: 0 .08em;
+}
+.pill.amber { color: var(--amber); border-color: var(--amber); }
+.pill.green { color: var(--green); border-color: var(--green); }
+.pill.purple{ color: var(--purple); border-color: var(--purple); }
+.pill.blue  { color: var(--blue); border-color: var(--blue); }
+
+.reveal .slide-footer { display: none; }
+.title-slide h1 { font-size: 1.8em; }
+.title-slide .subtitle {
+  font-size: .7em; color: var(--green); font-family: 'DM Sans', sans-serif;
+  font-weight: 300; letter-spacing: .04em; margin: .3em 0 .6em;
+}
+.title-slide .meta { font-size: .48em; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+.reveal ul, .reveal ol { margin: .15em 0 .15em 1em; }
+.reveal .slides > section { display: flex !important; flex-direction: column !important; overflow-y: auto !important; align-items: stretch !important; justify-content: flex-start !important; }
+  </style>
+</head>
+<body>
+  <div class="reveal"><div class="slides">
+
+<!-- ============================================================ -->
+<!-- SLIDE 01 — TITLE -->
+<!-- ============================================================ -->
+<section class="title-slide" data-background-color="#0a0a0f">
+  <div style="text-align:left; max-width:820px; margin:0 auto; padding: 1em 0;">
+    <div style="font-family:'JetBrains Mono',monospace; font-size:.5em; color:var(--muted); margin-bottom:.4em; letter-spacing:.1em;">EXPRESS.JS DEEP DIVE</div>
+    <h1>Introduction to Express Middleware</h1>
+    <div class="subtitle">The Backbone of Every Express Application</div>
+    <div style="width:60px; height:3px; background:var(--amber); margin-bottom:1.4em;"></div>
+    <div class="meta">19 slides &middot; pipeline, auth, validation, composition, testing &middot; 2026</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 02 — AGENDA -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">01</span><h2>Agenda</h2></div>
+  <div class="cols cols-2">
+    <div class="card amber">
+      <h3>Foundations</h3>
+      <ul>
+        <li>What Is Middleware?</li>
+        <li>How the Middleware Stack Works</li>
+        <li>Application-Level Middleware</li>
+        <li>Router-Level Middleware</li>
+        <li>Built-In Middleware</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <h3>Error Handling &amp; Third-Party</h3>
+      <ul>
+        <li>Error-Handling Middleware</li>
+        <li>Third-Party Middleware</li>
+        <li>Writing Custom Middleware</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <h3>Security &amp; Validation</h3>
+      <ul>
+        <li>Authentication Middleware</li>
+        <li>Authorisation Middleware</li>
+        <li>Validation Middleware</li>
+        <li>Request Processing Pipeline</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <h3>Advanced Patterns</h3>
+      <ul>
+        <li>Async Middleware &amp; Error Propagation</li>
+        <li>Middleware Composition Patterns</li>
+        <li>Testing Middleware</li>
+        <li>Performance Considerations</li>
+        <li>Summary &amp; Next Steps</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 03 — WHAT IS MIDDLEWARE? -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">02</span><h2>What Is Middleware?</h2></div>
+  <p>A middleware function is any function with access to the <span class="a">request object</span>, <span class="g">response object</span>, and the <span class="p">next function</span> in the application&rsquo;s request-response cycle. Middleware functions can execute code, modify <code>req</code>/<code>res</code>, end the cycle, or call <code>next()</code> to pass control forward.</p>
+  <div class="cols cols-6040">
+    <div>
+      <h3>The Signature</h3>
+<pre><code class="language-javascript">// Every middleware has the same shape
+function myMiddleware(req, res, next) {
+  // 1. Execute any code
+  console.log(`${req.method} ${req.url}`);
+
+  // 2. Modify request or response
+  req.requestTime = Date.now();
+
+  // 3. End the cycle...
+  // res.send('done');
+
+  // 4. ...or pass control to the next middleware
+  next();
+}</code></pre>
+    </div>
+    <div>
+      <h3>The Pipeline Concept</h3>
+      <div class="card amber">
+        <p><span class="a">Request</span> enters the top of the stack</p>
+      </div>
+      <div class="card green" style="margin-top:.3em;">
+        <p><span class="g">Middleware 1</span> &rarr; processes &rarr; calls <code>next()</code></p>
+      </div>
+      <div class="card purple" style="margin-top:.3em;">
+        <p><span class="p">Middleware 2</span> &rarr; processes &rarr; calls <code>next()</code></p>
+      </div>
+      <div class="card blue" style="margin-top:.3em;">
+        <p><span class="b">Route handler</span> &rarr; sends response</p>
+      </div>
+      <div class="card red" style="margin-top:.3em;">
+        <p><span class="r">Response</span> flows back to client</p>
+      </div>
+    </div>
+  </div>
+  <p><strong>Key insight:</strong> Express is essentially a series of middleware function calls. The route handler itself is just the final middleware in the chain.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 04 — HOW THE MIDDLEWARE STACK WORKS -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">03</span><h2>How the Middleware Stack Works</h2></div>
+  <p>Middleware executes in the <span class="a">order it is registered</span>. Each function must either call <code>next()</code> or send a response &mdash; otherwise the request hangs indefinitely.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Execution Order</h3>
+<pre><code class="language-javascript">const app = express();
+
+// 1st — runs on every request
+app.use((req, res, next) => {
+  console.log('A: global middleware');
+  next();
+});
+
+// 2nd — only GET /api/users
+app.get('/api/users', (req, res, next) => {
+  console.log('B: route middleware');
+  next();
+});
+
+// 3rd — the handler
+app.get('/api/users', (req, res) => {
+  console.log('C: route handler');
+  res.json({ users: [] });
+});
+
+// Output for GET /api/users:
+// A: global middleware
+// B: route middleware
+// C: route handler</code></pre>
+    </div>
+    <div>
+      <h3>Request Lifecycle</h3>
+      <svg class="diagram" viewBox="0 0 340 400" style="width:100%; max-width:320px;">
+        <defs>
+          <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#f5a623"/></marker>
+        </defs>
+        <rect x="90" y="10" width="160" height="32" rx="4" fill="none" stroke="#f5a623" stroke-width="1.5"/>
+        <text x="170" y="30" text-anchor="middle" fill="#f5a623" font-size="13" font-family="JetBrains Mono">Incoming Request</text>
+        <line x1="170" y1="42" x2="170" y2="62" stroke="#f5a623" marker-end="url(#ah)"/>
+        <rect x="60" y="65" width="220" height="32" rx="4" fill="#10101a" stroke="#2a2a3a" stroke-width="1"/>
+        <text x="170" y="85" text-anchor="middle" fill="#4ecb8d" font-size="12" font-family="JetBrains Mono">body parser (json)</text>
+        <line x1="170" y1="97" x2="170" y2="117" stroke="#f5a623" marker-end="url(#ah)"/>
+        <rect x="60" y="120" width="220" height="32" rx="4" fill="#10101a" stroke="#2a2a3a" stroke-width="1"/>
+        <text x="170" y="140" text-anchor="middle" fill="#4ecb8d" font-size="12" font-family="JetBrains Mono">cors()</text>
+        <line x1="170" y1="152" x2="170" y2="172" stroke="#f5a623" marker-end="url(#ah)"/>
+        <rect x="60" y="175" width="220" height="32" rx="4" fill="#10101a" stroke="#2a2a3a" stroke-width="1"/>
+        <text x="170" y="195" text-anchor="middle" fill="#a78bfa" font-size="12" font-family="JetBrains Mono">authMiddleware</text>
+        <line x1="170" y1="207" x2="170" y2="227" stroke="#f5a623" marker-end="url(#ah)"/>
+        <rect x="60" y="230" width="220" height="32" rx="4" fill="#10101a" stroke="#2a2a3a" stroke-width="1"/>
+        <text x="170" y="250" text-anchor="middle" fill="#60a5fa" font-size="12" font-family="JetBrains Mono">validateInput</text>
+        <line x1="170" y1="262" x2="170" y2="282" stroke="#f5a623" marker-end="url(#ah)"/>
+        <rect x="60" y="285" width="220" height="32" rx="4" fill="#10101a" stroke="#2a2a3a" stroke-width="1"/>
+        <text x="170" y="305" text-anchor="middle" fill="#f5a623" font-size="12" font-family="JetBrains Mono">Route Handler</text>
+        <line x1="170" y1="317" x2="170" y2="337" stroke="#f5a623" marker-end="url(#ah)"/>
+        <rect x="90" y="340" width="160" height="32" rx="4" fill="none" stroke="#4ecb8d" stroke-width="1.5"/>
+        <text x="170" y="360" text-anchor="middle" fill="#4ecb8d" font-size="13" font-family="JetBrains Mono">res.json() / send()</text>
+      </svg>
+    </div>
+  </div>
+  <p><strong>If you forget <code>next()</code>:</strong> the request will hang until the client times out. Express does not emit a warning.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 05 — APPLICATION-LEVEL MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">04</span><h2>Application-Level Middleware</h2></div>
+  <p>Bound to an instance of <code>express()</code> using <code>app.use()</code> or <code>app.METHOD()</code>. This is where you attach global behaviour to every incoming request.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>app.use() &mdash; All Routes</h3>
+<pre><code class="language-javascript">// Runs on every request, any HTTP method
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// Mount on a specific path prefix
+// Runs for ANY request starting with /api
+app.use('/api', (req, res, next) => {
+  res.set('X-API-Version', '2.1');
+  next();
+});</code></pre>
+      <h3>app.METHOD() &mdash; Specific Routes</h3>
+<pre><code class="language-javascript">// Only GET requests to /health
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Multiple middleware on one route
+app.post('/api/orders',
+  authenticate,
+  validateOrder,
+  (req, res) => {
+    // handler only runs if both middleware called next()
+    res.status(201).json({ orderId: '...' });
+  }
+);</code></pre>
+    </div>
+    <div>
+      <h3>Mounting Paths</h3>
+      <div class="card amber">
+        <h3><code>app.use('/')</code></h3>
+        <p>Matches <strong>all</strong> paths (default when no path given)</p>
+      </div>
+      <div class="card green" style="margin-top:.3em;">
+        <h3><code>app.use('/api')</code></h3>
+        <p>Matches <code>/api</code>, <code>/api/users</code>, <code>/api/orders/123</code></p>
+      </div>
+      <div class="card purple" style="margin-top:.3em;">
+        <h3><code>app.use('/api/v2')</code></h3>
+        <p>Matches any path starting with <code>/api/v2</code></p>
+      </div>
+      <h3>Order Matters</h3>
+<pre><code class="language-javascript">// WRONG — 404 handler before routes
+app.use((req, res) => res.status(404).send('Not found'));
+app.get('/users', getUsers); // never reached
+
+// CORRECT — routes first, then 404
+app.get('/users', getUsers);
+app.use((req, res) => res.status(404).send('Not found'));</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 06 — ROUTER-LEVEL MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">05</span><h2>Router-Level Middleware</h2></div>
+  <p>Works identically to application-level middleware, but is bound to an instance of <code>express.Router()</code>. This lets you create <span class="a">modular, mountable route handlers</span> with their own middleware stacks.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Creating a Router Module</h3>
+<pre><code class="language-javascript">// routes/users.js
+const router = require('express').Router();
+
+// Router-level middleware — only runs for /users/*
+router.use((req, res, next) => {
+  console.log(`Users route: ${req.method} ${req.url}`);
+  next();
+});
+
+// Param middleware — runs when :id is present
+router.param('id', async (req, res, next, id) => {
+  const user = await User.findById(id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  req.user = user;
+  next();
+});
+
+router.get('/', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+router.get('/:id', (req, res) => {
+  res.json(req.user); // set by param middleware
+});
+
+router.delete('/:id', authorize('admin'), async (req, res) => {
+  await req.user.remove();
+  res.status(204).end();
+});
+
+module.exports = router;</code></pre>
+    </div>
+    <div>
+      <h3>Mounting in app.js</h3>
+<pre><code class="language-javascript">// app.js
+const express = require('express');
+const app = express();
+
+const usersRouter  = require('./routes/users');
+const ordersRouter = require('./routes/orders');
+const authRouter   = require('./routes/auth');
+
+// Mount each router at its prefix
+app.use('/api/users',  usersRouter);
+app.use('/api/orders', ordersRouter);
+app.use('/auth',       authRouter);</code></pre>
+      <h3>Benefits of Router Isolation</h3>
+      <div class="card green">
+        <ul>
+          <li><strong>Separation of concerns</strong> &mdash; each file owns its routes</li>
+          <li><strong>Independent middleware</strong> &mdash; auth on <code>/api</code>, none on <code>/public</code></li>
+          <li><strong>Testable</strong> &mdash; mount router in test app, no side effects</li>
+          <li><strong>Reusable</strong> &mdash; same router can be mounted at different paths</li>
+          <li><strong>Scalable</strong> &mdash; team members work on separate route files</li>
+        </ul>
+      </div>
+      <h3>Project Structure</h3>
+<pre><code class="language-text">routes/
+├── auth.js        # login, register, logout
+├── users.js       # CRUD for users
+├── orders.js      # CRUD for orders
+└── index.js       # re-exports all routers</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 07 — BUILT-IN MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">06</span><h2>Built-In Middleware</h2></div>
+  <p>Express ships with three built-in middleware functions. Since Express 4.16+, you no longer need <code>body-parser</code> as a separate dependency.</p>
+  <div class="cols cols-3">
+    <div class="card amber">
+      <h3>express.json()</h3>
+      <p>Parses incoming JSON payloads. Populates <code>req.body</code>.</p>
+<pre><code class="language-javascript">app.use(express.json({
+  limit: '10kb',     // max payload size
+  strict: true,      // only objects/arrays
+  type: 'application/json'
+}));
+
+// Now req.body is parsed
+app.post('/api/users', (req, res) => {
+  console.log(req.body.name);
+  // "Alice"
+});</code></pre>
+    </div>
+    <div class="card green">
+      <h3>express.urlencoded()</h3>
+      <p>Parses URL-encoded form bodies (<code>application/x-www-form-urlencoded</code>).</p>
+<pre><code class="language-javascript">app.use(express.urlencoded({
+  extended: true,  // use qs library
+  limit: '10kb',
+  parameterLimit: 1000
+}));
+
+// HTML form submission
+// &lt;form method="POST"&gt;
+//   &lt;input name="email" ...&gt;
+// req.body.email = "alice@co.uk"</code></pre>
+    </div>
+    <div class="card purple">
+      <h3>express.static()</h3>
+      <p>Serves static files from a directory. The only built-in middleware that does <strong>not</strong> call <code>next()</code> on match.</p>
+<pre><code class="language-javascript">const path = require('path');
+
+app.use(express.static(
+  path.join(__dirname, 'public'),
+  {
+    maxAge: '1d',       // cache 1 day
+    etag: true,         // ETag headers
+    index: 'index.html',
+    dotfiles: 'ignore'
+  }
+));
+
+// GET /css/style.css  → public/css/style.css
+// GET /img/logo.png   → public/img/logo.png</code></pre>
+    </div>
+  </div>
+  <p><strong>Tip:</strong> Always place <code>express.static()</code> <em>before</em> your routes to serve assets without unnecessary middleware overhead. Use <code>express.json()</code> and <code>express.urlencoded()</code> only on routes that need body parsing.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 08 — ERROR-HANDLING MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">07</span><h2>Error-Handling Middleware</h2></div>
+  <p>Express identifies error handlers by their <span class="a">four-argument signature</span>: <code>(err, req, res, next)</code>. They must be registered <strong>after</strong> all routes and other middleware.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Basic Error Handler</h3>
+<pre><code class="language-javascript">// Must have exactly 4 parameters
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+
+  const status = err.status || 500;
+  res.status(status).json({
+    error: {
+      message: err.message,
+      // Only include stack in development
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: err.stack
+      })
+    }
+  });
+});</code></pre>
+      <h3>Triggering Errors</h3>
+<pre><code class="language-javascript">// Pass error to next()
+app.get('/api/users/:id', async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      const err = new Error('User not found');
+      err.status = 404;
+      return next(err); // skip to error handler
+    }
+    res.json(user);
+  } catch (err) {
+    next(err); // pass DB errors, etc.
+  }
+});</code></pre>
+    </div>
+    <div>
+      <h3>Centralised Error Handling Pattern</h3>
+<pre><code class="language-javascript">// Custom AppError class
+class AppError extends Error {
+  constructor(message, status = 500, code) {
+    super(message);
+    this.status = status;
+    this.code = code;
+    this.isOperational = true;
+  }
+}
+
+// Specific error types
+class NotFoundError extends AppError {
+  constructor(resource = 'Resource') {
+    super(`${resource} not found`, 404, 'NOT_FOUND');
+  }
+}
+
+class ValidationError extends AppError {
+  constructor(details) {
+    super('Validation failed', 422, 'VALIDATION_ERROR');
+    this.details = details;
+  }
+}
+
+// In routes — throw clean errors
+app.get('/api/users/:id', async (req, res, next) => {
+  const user = await User.findById(req.params.id);
+  if (!user) throw new NotFoundError('User');
+  res.json(user);
+});</code></pre>
+      <h3>Multiple Error Handlers</h3>
+<pre><code class="language-javascript">// 1st — log the error
+app.use((err, req, res, next) => {
+  logger.error({ err, req });
+  next(err); // forward to next error handler
+});
+
+// 2nd — send response
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    error: err.message
+  });
+});</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 09 — THIRD-PARTY MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">08</span><h2>Third-Party Middleware</h2></div>
+  <p>The Express ecosystem relies on third-party middleware for cross-cutting concerns. These are installed via npm and registered with <code>app.use()</code>.</p>
+  <table>
+    <tr>
+      <th>Package</th>
+      <th>Purpose</th>
+      <th>Usage</th>
+    </tr>
+    <tr>
+      <td><span class="a">helmet</span></td>
+      <td>Sets security HTTP headers (CSP, HSTS, X-Frame-Options, etc.)</td>
+      <td><code>app.use(helmet())</code></td>
+    </tr>
+    <tr>
+      <td><span class="g">cors</span></td>
+      <td>Configures Cross-Origin Resource Sharing headers</td>
+      <td><code>app.use(cors({ origin: 'https://myapp.com' }))</code></td>
+    </tr>
+    <tr>
+      <td><span class="p">morgan</span></td>
+      <td>HTTP request logger (dev, combined, custom formats)</td>
+      <td><code>app.use(morgan('combined'))</code></td>
+    </tr>
+    <tr>
+      <td><span class="b">compression</span></td>
+      <td>Gzip/Brotli response compression</td>
+      <td><code>app.use(compression())</code></td>
+    </tr>
+    <tr>
+      <td><span class="r">express-rate-limit</span></td>
+      <td>Rate limiting (DDoS protection, API quotas)</td>
+      <td><code>app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }))</code></td>
+    </tr>
+    <tr>
+      <td><span class="a">cookie-parser</span></td>
+      <td>Parses Cookie header, populates <code>req.cookies</code></td>
+      <td><code>app.use(cookieParser('secret'))</code></td>
+    </tr>
+    <tr>
+      <td><span class="g">express-session</span></td>
+      <td>Server-side session with pluggable stores</td>
+      <td><code>app.use(session({ store, secret, ... }))</code></td>
+    </tr>
+    <tr>
+      <td><span class="p">multer</span></td>
+      <td>Multipart form data (file uploads)</td>
+      <td><code>upload.single('avatar')</code></td>
+    </tr>
+  </table>
+  <h3>Recommended Registration Order</h3>
+<pre><code class="language-javascript">app.use(helmet());                    // security headers first
+app.use(cors({ origin: allowList })); // CORS before routes
+app.use(compression());               // compress responses
+app.use(morgan('combined'));           // log every request
+app.use(express.json());              // parse JSON bodies
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());              // parse cookies
+app.use(express.static('public'));    // static assets
+// ... routes ...
+// ... error handlers last ...</code></pre>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — WRITING CUSTOM MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">09</span><h2>Writing Custom Middleware</h2></div>
+  <p>Custom middleware lets you extract <span class="a">cross-cutting concerns</span> into reusable functions. The pattern is always the same: receive <code>req</code>, <code>res</code>, <code>next</code>, do work, call <code>next()</code>.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Request Logger</h3>
+<pre><code class="language-javascript">function requestLogger(req, res, next) {
+  const start = Date.now();
+
+  // Hook into response finish event
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(
+      `${req.method} ${req.originalUrl} ` +
+      `${res.statusCode} ${duration}ms`
+    );
+  });
+
+  next();
+}
+
+app.use(requestLogger);</code></pre>
+      <h3>Request ID</h3>
+<pre><code class="language-javascript">const { randomUUID } = require('crypto');
+
+function requestId(req, res, next) {
+  req.id = req.headers['x-request-id'] || randomUUID();
+  res.set('X-Request-Id', req.id);
+  next();
+}
+
+app.use(requestId);</code></pre>
+    </div>
+    <div>
+      <h3>Response Timing</h3>
+<pre><code class="language-javascript">function responseTime(req, res, next) {
+  const start = process.hrtime.bigint();
+
+  res.on('finish', () => {
+    const ns = process.hrtime.bigint() - start;
+    const ms = Number(ns) / 1_000_000;
+    res.set('X-Response-Time', `${ms.toFixed(2)}ms`);
+  });
+
+  next();
+}</code></pre>
+      <h3>Feature Flags</h3>
+<pre><code class="language-javascript">function featureFlags(flagService) {
+  return async (req, res, next) => {
+    try {
+      req.flags = await flagService.getFlags(
+        req.user?.id,
+        req.headers['x-region']
+      );
+      next();
+    } catch (err) {
+      // Default flags on failure — don't block the request
+      req.flags = flagService.defaults;
+      next();
+    }
+  };
+}
+
+app.use(featureFlags(launchDarkly));</code></pre>
+      <h3>Maintenance Mode</h3>
+<pre><code class="language-javascript">function maintenanceMode(req, res, next) {
+  if (process.env.MAINTENANCE === 'true') {
+    return res.status(503).json({
+      error: 'Service under maintenance',
+      retryAfter: 300
+    });
+  }
+  next();
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11 — AUTHENTICATION MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">10</span><h2>Authentication Middleware</h2></div>
+  <p>Authentication middleware verifies <span class="a">who the user is</span>. It typically extracts credentials from headers or cookies, validates them, and attaches the user object to <code>req.user</code>.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>JWT Verification</h3>
+<pre><code class="language-javascript">const jwt = require('jsonwebtoken');
+
+function authenticate(req, res, next) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    return res.status(401).json({
+      error: 'Missing or malformed token'
+    });
+  }
+
+  const token = header.slice(7);
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET, {
+      algorithms: ['HS256'],
+      issuer: 'my-app',
+    });
+    req.user = payload;  // { id, email, role, iat, exp }
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// Protect all /api routes
+app.use('/api', authenticate);</code></pre>
+    </div>
+    <div>
+      <h3>Session-Based Auth</h3>
+<pre><code class="language-javascript">function requireSession(req, res, next) {
+  if (!req.session?.userId) {
+    return res.status(401).json({
+      error: 'Not authenticated'
+    });
+  }
+  next();
+}
+
+// Login route — creates session
+app.post('/login', async (req, res) => {
+  const user = await User.findByEmail(req.body.email);
+  if (!user || !await user.verifyPassword(req.body.password)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+  req.session.userId = user.id;
+  req.session.role = user.role;
+  res.json({ message: 'Logged in' });
+});</code></pre>
+      <h3>Passport.js Strategy</h3>
+<pre><code class="language-javascript">const passport = require('passport');
+const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
+
+passport.use(new JwtStrategy({
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  secretOrKey: process.env.JWT_SECRET,
+}, async (payload, done) => {
+  const user = await User.findById(payload.id);
+  return done(null, user || false);
+}));
+
+// Use as middleware
+app.use('/api', passport.authenticate('jwt', { session: false }));</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 12 — AUTHORISATION MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">11</span><h2>Authorisation Middleware</h2></div>
+  <p>Authorisation determines <span class="a">what an authenticated user is allowed to do</span>. It runs <strong>after</strong> authentication and checks roles, permissions, or resource ownership.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Role-Based Access Control</h3>
+<pre><code class="language-javascript">// Factory function — returns middleware
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        error: 'Insufficient permissions',
+        required: allowedRoles,
+        current: req.user.role,
+      });
+    }
+    next();
+  };
+}
+
+// Usage on routes
+app.delete('/api/users/:id',
+  authenticate,
+  requireRole('admin'),
+  deleteUser
+);
+
+app.put('/api/posts/:id',
+  authenticate,
+  requireRole('admin', 'editor'),
+  updatePost
+);</code></pre>
+    </div>
+    <div>
+      <h3>Permission Guards</h3>
+<pre><code class="language-javascript">function requirePermission(...perms) {
+  return (req, res, next) => {
+    const userPerms = req.user.permissions || [];
+    const has = perms.every(p => userPerms.includes(p));
+    if (!has) {
+      return res.status(403).json({
+        error: 'Missing permissions',
+        required: perms,
+      });
+    }
+    next();
+  };
+}
+
+app.post('/api/reports/export',
+  authenticate,
+  requirePermission('reports:read', 'reports:export'),
+  exportReport
+);</code></pre>
+      <h3>Resource Ownership</h3>
+<pre><code class="language-javascript">function requireOwnership(resourceLoader) {
+  return async (req, res, next) => {
+    const resource = await resourceLoader(req);
+    if (!resource) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    if (resource.userId !== req.user.id
+        && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    req.resource = resource;
+    next();
+  };
+}
+
+app.put('/api/posts/:id',
+  authenticate,
+  requireOwnership((req) => Post.findById(req.params.id)),
+  updatePost
+);</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 13 — VALIDATION MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">12</span><h2>Validation Middleware</h2></div>
+  <p>Input validation ensures <span class="a">request data conforms to expected shapes</span> before it reaches your business logic. Never trust client input.</p>
+  <div class="cols cols-3">
+    <div class="card amber">
+      <h3>express-validator</h3>
+<pre><code class="language-javascript">const { body, validationResult } = require('express-validator');
+
+const validateUser = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Valid email required'),
+  body('password')
+    .isLength({ min: 8 })
+    .matches(/\d/)
+    .withMessage('Min 8 chars with a number'),
+  body('name')
+    .trim()
+    .notEmpty()
+    .escape(),
+
+  // Check result
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        errors: errors.array()
+      });
+    }
+    next();
+  }
+];
+
+app.post('/api/users', validateUser, createUser);</code></pre>
+    </div>
+    <div class="card green">
+      <h3>Zod Schema Validation</h3>
+<pre><code class="language-javascript">const { z } = require('zod');
+
+const CreateOrderSchema = z.object({
+  items: z.array(z.object({
+    productId: z.string().uuid(),
+    quantity: z.number().int().positive(),
+  })).min(1),
+  shippingAddress: z.object({
+    line1: z.string().min(1),
+    city: z.string().min(1),
+    postcode: z.string().regex(/^[A-Z]{1,2}\d/),
+    country: z.string().length(2),
+  }),
+});
+
+function validate(schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(422).json({
+        errors: result.error.issues,
+      });
+    }
+    req.validated = result.data;
+    next();
+  };
+}
+
+app.post('/api/orders',
+  validate(CreateOrderSchema),
+  createOrder
+);</code></pre>
+    </div>
+    <div class="card purple">
+      <h3>Joi Validation</h3>
+<pre><code class="language-javascript">const Joi = require('joi');
+
+const productSchema = Joi.object({
+  name: Joi.string().min(2).max(100).required(),
+  price: Joi.number().positive().precision(2).required(),
+  category: Joi.string().valid(
+    'electronics', 'books', 'clothing'
+  ).required(),
+  tags: Joi.array().items(Joi.string()).max(10),
+  inStock: Joi.boolean().default(true),
+});
+
+function validateBody(schema) {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(
+      req.body,
+      { abortEarly: false, stripUnknown: true }
+    );
+    if (error) {
+      return res.status(422).json({
+        errors: error.details.map(d => ({
+          field: d.path.join('.'),
+          message: d.message,
+        })),
+      });
+    }
+    req.body = value; // sanitised
+    next();
+  };
+}
+
+app.post('/api/products',
+  validateBody(productSchema),
+  createProduct
+);</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 14 — REQUEST PROCESSING PIPELINE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">13</span><h2>Request Processing Pipeline</h2></div>
+  <p>A typical production Express app processes requests through a <span class="a">layered pipeline</span>. Each layer has a single responsibility and can short-circuit the chain by sending a response.</p>
+  <div class="cols cols-6040">
+    <div>
+      <h3>Complete Pipeline Example</h3>
+<pre><code class="language-javascript">const express = require('express');
+const app = express();
+
+// ── Layer 1: Security & Parsing ──────────────
+app.use(helmet());
+app.use(cors({ origin: process.env.CLIENT_URL }));
+app.use(compression());
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// ── Layer 2: Logging & Request ID ────────────
+app.use(requestId);
+app.use(morgan(':method :url :status :response-time ms'));
+
+// ── Layer 3: Rate Limiting ───────────────────
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 100,
+  standardHeaders: true,
+}));
+
+// ── Layer 4: Static Assets ───────────────────
+app.use(express.static('public', { maxAge: '1d' }));
+
+// ── Layer 5: Authentication ──────────────────
+app.use('/api', authenticate);
+
+// ── Layer 6: Routes (validation inside) ──────
+app.use('/api/users',  usersRouter);
+app.use('/api/orders', ordersRouter);
+
+// ── Layer 7: 404 Handler ─────────────────────
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// ── Layer 8: Error Handler ───────────────────
+app.use((err, req, res, next) => {
+  logger.error({ err, requestId: req.id });
+  res.status(err.status || 500).json({
+    error: err.message,
+    requestId: req.id,
+  });
+});</code></pre>
+    </div>
+    <div>
+      <h3>Pipeline Visualisation</h3>
+      <div class="card amber"><h3>Layer 1</h3><p>Security headers, CORS, body parsing</p></div>
+      <div class="card green" style="margin-top:.2em;"><h3>Layer 2</h3><p>Request ID, logging</p></div>
+      <div class="card purple" style="margin-top:.2em;"><h3>Layer 3</h3><p>Rate limiting</p></div>
+      <div class="card blue" style="margin-top:.2em;"><h3>Layer 4</h3><p>Static assets (short-circuits)</p></div>
+      <div class="card amber" style="margin-top:.2em;"><h3>Layer 5</h3><p>Authentication (rejects 401)</p></div>
+      <div class="card green" style="margin-top:.2em;"><h3>Layer 6</h3><p>Validate &rarr; Authorise &rarr; Handle</p></div>
+      <div class="card red" style="margin-top:.2em;"><h3>Layer 7&ndash;8</h3><p>404 catch-all &rarr; Error handler</p></div>
+      <h3>Design Principles</h3>
+      <ul>
+        <li><strong>Fail fast</strong> &mdash; reject bad requests early</li>
+        <li><strong>Cheapest checks first</strong> &mdash; rate limit before DB queries</li>
+        <li><strong>Single responsibility</strong> &mdash; one concern per middleware</li>
+        <li><strong>Never skip error handlers</strong> &mdash; always register them last</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 15 — ASYNC MIDDLEWARE & ERROR PROPAGATION -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">14</span><h2>Async Middleware &amp; Error Propagation</h2></div>
+  <p>Express 4.x does <strong>not</strong> catch rejected promises in <code>async</code> middleware. Unhandled rejections crash the process or silently hang. You must wrap async handlers or upgrade to Express 5.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>The Problem</h3>
+<pre><code class="language-javascript">// BROKEN — unhandled rejection if DB throws
+app.get('/api/users', async (req, res) => {
+  const users = await User.find(); // throws!
+  res.json(users);
+});
+// Express never calls the error handler.
+// Request hangs or process crashes.</code></pre>
+      <h3>Solution 1: try/catch</h3>
+<pre><code class="language-javascript">app.get('/api/users', async (req, res, next) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    next(err); // forwards to error handler
+  }
+});</code></pre>
+      <h3>Solution 2: Wrapper Function</h3>
+<pre><code class="language-javascript">// asyncHandler wraps every async route
+function asyncHandler(fn) {
+  return (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+}
+
+// Clean — no try/catch in every route
+app.get('/api/users', asyncHandler(async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+}));
+
+app.get('/api/users/:id', asyncHandler(async (req, res) => {
+  const user = await User.findByIdOrFail(req.params.id);
+  res.json(user);
+}));</code></pre>
+    </div>
+    <div>
+      <h3>Solution 3: express-async-errors</h3>
+<pre><code class="language-javascript">// Monkey-patches Express to catch async rejections
+require('express-async-errors');
+
+// Now this just works — no wrapper needed
+app.get('/api/users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+
+// Errors automatically forwarded to error handler</code></pre>
+      <h3>Solution 4: Express 5 (Built-In)</h3>
+<pre><code class="language-javascript">// Express 5 natively catches async rejections
+// npm install express@5
+const express = require('express');
+
+// No wrapper, no monkey-patch — it just works
+app.get('/api/users', async (req, res) => {
+  const users = await User.find();
+  res.json(users);
+});
+// Rejected promise → error handler automatically</code></pre>
+      <h3>Async Middleware Example</h3>
+<pre><code class="language-javascript">// Async middleware also needs wrapping (Express 4)
+const loadTenant = asyncHandler(async (req, res, next) => {
+  const tenant = await Tenant.findByDomain(req.hostname);
+  if (!tenant) throw new NotFoundError('Tenant');
+  req.tenant = tenant;
+  next(); // don't forget next() in middleware!
+});
+
+app.use('/api', loadTenant);</code></pre>
+      <p><strong>Express 5 recommendation:</strong> If starting a new project, use Express 5. It eliminates the async error gap entirely.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 16 — MIDDLEWARE COMPOSITION PATTERNS -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">15</span><h2>Middleware Composition Patterns</h2></div>
+  <p>Real applications compose middleware using <span class="a">factory functions</span>, <span class="g">conditional logic</span>, and <span class="p">chaining arrays</span> to keep code DRY and configurable.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Factory Functions (Configurable)</h3>
+<pre><code class="language-javascript">// Middleware that accepts options
+function rateLimit({ windowMs, max, keyGenerator }) {
+  const hits = new Map();
+
+  return (req, res, next) => {
+    const key = keyGenerator
+      ? keyGenerator(req)
+      : req.ip;
+    const now = Date.now();
+    const record = hits.get(key) || { count: 0, start: now };
+
+    if (now - record.start > windowMs) {
+      record.count = 0;
+      record.start = now;
+    }
+
+    record.count++;
+    hits.set(key, record);
+
+    if (record.count > max) {
+      return res.status(429).json({ error: 'Too many requests' });
+    }
+    next();
+  };
+}
+
+// Different limits for different routes
+app.use('/api', rateLimit({ windowMs: 60000, max: 100 }));
+app.use('/auth/login', rateLimit({ windowMs: 60000, max: 5 }));</code></pre>
+      <h3>Conditional Middleware</h3>
+<pre><code class="language-javascript">function unless(middleware, ...paths) {
+  return (req, res, next) => {
+    if (paths.some(p => req.path.startsWith(p))) {
+      return next(); // skip this middleware
+    }
+    middleware(req, res, next);
+  };
+}
+
+// Authenticate everything except /auth and /health
+app.use(unless(authenticate, '/auth', '/health', '/public'));</code></pre>
+    </div>
+    <div>
+      <h3>Chaining Arrays</h3>
+<pre><code class="language-javascript">// Group related middleware into reusable arrays
+const apiDefaults = [
+  helmet(),
+  cors({ origin: process.env.CLIENT_URL }),
+  express.json({ limit: '10kb' }),
+  requestId,
+  authenticate,
+];
+
+// Apply to all API routes
+app.use('/api', ...apiDefaults);
+
+// Route-specific chains
+const createUserPipeline = [
+  ...apiDefaults,
+  requireRole('admin'),
+  validateUser,
+  createUser,
+];
+
+app.post('/api/users', createUserPipeline);</code></pre>
+      <h3>Compose Utility</h3>
+<pre><code class="language-javascript">// Combine multiple middleware into one
+function compose(...middlewares) {
+  return middlewares.flat();
+}
+
+const secured = compose(authenticate, requireRole('admin'));
+const validated = (schema) => compose(authenticate, validate(schema));
+
+app.get('/admin/users', ...secured, listUsers);
+app.post('/api/orders', ...validated(orderSchema), createOrder);</code></pre>
+      <h3>Environment-Based Middleware</h3>
+<pre><code class="language-javascript">if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+  app.use(require('errorhandler')());
+}
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined'));
+  app.use(compression());
+  app.use(helmet());
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 17 — TESTING MIDDLEWARE -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">16</span><h2>Testing Middleware</h2></div>
+  <p>Middleware functions are plain functions &mdash; they can be <span class="a">unit tested with mocks</span> or <span class="g">integration tested with supertest</span>.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Unit Testing with Mocks</h3>
+<pre><code class="language-javascript">// middleware/requestId.js
+const { randomUUID } = require('crypto');
+
+function requestId(req, res, next) {
+  req.id = req.headers['x-request-id'] || randomUUID();
+  res.set('X-Request-Id', req.id);
+  next();
+}
+
+// __tests__/requestId.test.js
+const requestId = require('../middleware/requestId');
+
+describe('requestId middleware', () => {
+  let req, res, next;
+
+  beforeEach(() => {
+    req = { headers: {} };
+    res = { set: jest.fn() };
+    next = jest.fn();
+  });
+
+  it('generates a UUID when no header present', () => {
+    requestId(req, res, next);
+    expect(req.id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-/
+    );
+    expect(res.set).toHaveBeenCalledWith(
+      'X-Request-Id', req.id
+    );
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses existing x-request-id header', () => {
+    req.headers['x-request-id'] = 'abc-123';
+    requestId(req, res, next);
+    expect(req.id).toBe('abc-123');
+    expect(next).toHaveBeenCalled();
+  });
+});</code></pre>
+    </div>
+    <div>
+      <h3>Integration Testing with supertest</h3>
+<pre><code class="language-javascript">const request = require('supertest');
+const express = require('express');
+const authenticate = require('../middleware/authenticate');
+
+function createTestApp() {
+  const app = express();
+  app.use(express.json());
+  app.use(authenticate);
+  app.get('/protected', (req, res) => {
+    res.json({ userId: req.user.id });
+  });
+  app.use((err, req, res, next) => {
+    res.status(err.status || 500).json({ error: err.message });
+  });
+  return app;
+}
+
+describe('authenticate middleware', () => {
+  const app = createTestApp();
+
+  it('returns 401 without a token', async () => {
+    const res = await request(app)
+      .get('/protected')
+      .expect(401);
+    expect(res.body.error).toMatch(/missing/i);
+  });
+
+  it('returns 401 with expired token', async () => {
+    const expired = createToken({ id: '1' }, { expiresIn: '0s' });
+    await request(app)
+      .get('/protected')
+      .set('Authorization', `Bearer ${expired}`)
+      .expect(401);
+  });
+
+  it('attaches user to req with valid token', async () => {
+    const token = createToken({ id: '42', role: 'user' });
+    const res = await request(app)
+      .get('/protected')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body.userId).toBe('42');
+  });
+});</code></pre>
+    </div>
+  </div>
+  <p><strong>Testing tip:</strong> Create a minimal Express app in each test file. Mount only the middleware under test and a simple route. This isolates tests from your production app configuration.</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 18 — PERFORMANCE CONSIDERATIONS -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">17</span><h2>Performance Considerations</h2></div>
+  <p>Middleware runs on <strong>every matching request</strong>. Poorly ordered or unnecessary middleware adds latency at scale. A few microseconds per middleware compound across millions of requests.</p>
+  <div class="cols cols-2">
+    <div>
+      <h3>Middleware Ordering</h3>
+      <table>
+        <tr><th>Position</th><th>Middleware</th><th>Why</th></tr>
+        <tr><td>1st</td><td>Health check</td><td>Short-circuit for load balancers</td></tr>
+        <tr><td>2nd</td><td>Static files</td><td>No auth/parsing needed</td></tr>
+        <tr><td>3rd</td><td>Rate limiter</td><td>Reject abusers before heavy work</td></tr>
+        <tr><td>4th</td><td>Body parser</td><td>Only parse when needed</td></tr>
+        <tr><td>5th</td><td>Auth</td><td>After parsing, before business logic</td></tr>
+        <tr><td>6th</td><td>Validation</td><td>Reject bad input early</td></tr>
+        <tr><td>Last</td><td>Error handler</td><td>Catches all errors from above</td></tr>
+      </table>
+      <h3>Short-Circuit Early</h3>
+<pre><code class="language-javascript">// Health check — skip all other middleware
+app.get('/health', (req, res) => {
+  res.status(200).send('ok');
+});
+
+// Only parse JSON on API routes
+app.use('/api', express.json());
+
+// Don't apply auth to public routes
+app.use('/api/private', authenticate);</code></pre>
+    </div>
+    <div>
+      <h3>Avoiding Unnecessary Work</h3>
+<pre><code class="language-javascript">// BAD — parses body for every request (even static)
+app.use(express.json());
+app.use(express.static('public'));
+
+// GOOD — static first, then parse
+app.use(express.static('public'));
+app.use('/api', express.json());
+
+// BAD — logging creates strings for every request
+app.use((req, res, next) => {
+  console.log(JSON.stringify({
+    method: req.method,
+    url: req.url,
+    headers: req.headers, // huge object
+  }));
+  next();
+});
+
+// GOOD — only log what you need
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});</code></pre>
+      <h3>Measuring Middleware Cost</h3>
+<pre><code class="language-javascript">function measure(name, middleware) {
+  return (req, res, next) => {
+    const start = process.hrtime.bigint();
+    const origNext = next;
+    next = (...args) => {
+      const ns = Number(process.hrtime.bigint() - start);
+      console.log(`${name}: ${(ns / 1e6).toFixed(2)}ms`);
+      origNext(...args);
+    };
+    middleware(req, res, next);
+  };
+}
+
+app.use(measure('helmet', helmet()));
+app.use(measure('cors', cors()));
+app.use(measure('json', express.json()));</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 19 — SUMMARY & NEXT STEPS -->
+<!-- ============================================================ -->
+<section>
+  <div class="slide-hdr"><span class="tag">18</span><h2>Summary &amp; Next Steps</h2></div>
+  <div class="cols cols-2">
+    <div>
+      <h3>Core Takeaways</h3>
+      <div class="card amber">
+        <ul>
+          <li>Middleware = <code>(req, res, next)</code> &mdash; the universal building block</li>
+          <li>Execution order is <strong>registration order</strong></li>
+          <li>Always call <code>next()</code> or send a response &mdash; never hang</li>
+          <li>Error handlers have 4 arguments: <code>(err, req, res, next)</code></li>
+          <li>Wrap async middleware in Express 4 (or use Express 5)</li>
+          <li>Compose via factory functions, arrays, and conditionals</li>
+        </ul>
+      </div>
+      <h3>Best Practices</h3>
+      <div class="card green">
+        <ul>
+          <li>Register middleware in order: security &rarr; parsing &rarr; auth &rarr; routes &rarr; errors</li>
+          <li>Scope middleware to only the routes that need it</li>
+          <li>Use Router for modular, testable route groups</li>
+          <li>Validate all input before processing</li>
+          <li>Centralise error handling with custom error classes</li>
+          <li>Test middleware in isolation with mock req/res/next</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <h3>Next Steps</h3>
+      <div class="card purple">
+        <ul>
+          <li>Build a REST API with layered middleware pipeline</li>
+          <li>Add JWT auth + role-based authorisation</li>
+          <li>Implement Zod/Joi validation middleware</li>
+          <li>Write unit + integration tests with supertest</li>
+          <li>Add rate limiting and security headers in production</li>
+          <li>Migrate to Express 5 for native async support</li>
+        </ul>
+      </div>
+      <h3>Essential Packages</h3>
+      <table>
+        <tr><th>Package</th><th>Purpose</th></tr>
+        <tr><td><code>express</code></td><td>Web framework</td></tr>
+        <tr><td><code>helmet</code></td><td>Security headers</td></tr>
+        <tr><td><code>cors</code></td><td>Cross-origin resource sharing</td></tr>
+        <tr><td><code>morgan</code></td><td>HTTP request logging</td></tr>
+        <tr><td><code>express-rate-limit</code></td><td>Rate limiting</td></tr>
+        <tr><td><code>jsonwebtoken</code></td><td>JWT signing &amp; verification</td></tr>
+        <tr><td><code>zod</code> / <code>joi</code></td><td>Schema validation</td></tr>
+        <tr><td><code>supertest</code></td><td>HTTP integration testing</td></tr>
+      </table>
+      <h3>Resources</h3>
+      <p><span class="a">expressjs.com/en/guide/using-middleware.html</span><br>
+         <span class="g">expressjs.com/en/guide/error-handling.html</span><br>
+         <span class="p">github.com/helmetjs/helmet</span><br>
+         <span class="b">github.com/ladjs/supertest</span></p>
+    </div>
+  </div>
+</section>
+
+  </div></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css">
+  <script>
+    Reveal.initialize({
+      hash: true, transition: 'fade', transitionSpeed: 'fast',
+      controls: true, progress: true, center: false,
+      width: 1100, height: 900, margin: 0.01,
+      plugins: [RevealHighlight], highlight: { theme: 'monokai' }
+    });
+  </script>
+</body>
+</html>
